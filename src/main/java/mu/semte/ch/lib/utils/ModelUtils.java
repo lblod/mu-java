@@ -15,6 +15,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
 import java.util.UUID;
 
 
@@ -31,7 +32,9 @@ public interface ModelUtils {
     }
 
     static String formattedDate(LocalDateTime ldt) {
-        return DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.000'Z'").format(ldt);
+        return DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(
+            ldt.atZone(ZoneId.systemDefault())
+        );
     }
 
     static boolean equals(Model firstModel, Model secondModel) {
