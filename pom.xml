@@ -37,7 +37,7 @@
     </properties>
     <scm>
         <connection>
-            scm:git:https://github.com/lblod/mu-java.git
+            scm:git:git@github.com:lblod/mu-java.git
         </connection>
         <tag>1.0.3</tag>
     </scm>
