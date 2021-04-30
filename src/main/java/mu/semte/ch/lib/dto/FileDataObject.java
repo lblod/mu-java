@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class TurtleFile {
+public class FileDataObject {
   private String graph;
   private String physicalId;
   private String logicalId;
