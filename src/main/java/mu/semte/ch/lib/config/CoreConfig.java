@@ -15,12 +15,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.io.Resource;
+import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static com.github.jsonldjava.shaded.com.google.common.collect.Maps.immutableEntry;
@@ -29,16 +33,20 @@ import static org.apache.commons.io.FilenameUtils.removeExtension;
 import static org.apache.commons.text.CaseUtils.toCamelCase;
 
 @Configuration
-@Import(DefaultExceptionHandler.class)
+@Import({SparqlClient.class, DefaultExceptionHandler.class})
 @EnableAsync
+@EnableScheduling
 @Slf4j
-public class CoreConfig {
+public class CoreConfig implements AsyncConfigurer {
 
     @Value("classpath*:sparql/*.sparql")
     private Resource[] queries;
 
-    @Value("${sparql.endpoint}")
-    private String sparqlUrl;
+
+    @Override
+    public Executor getAsyncExecutor() {
+        return Executors.newCachedThreadPool();
+    }
 
     @Bean
     public SparqlQueryStore sparqlQueryLoader() {
@@ -58,21 +66,5 @@ public class CoreConfig {
         return () -> queriesMap;
     }
 
-    @Bean
-    @Autowired
-    public SparqlClient defaultSudoSparqlClient(CloseableHttpClient closeableHttpClient) {
-        return SparqlClient.builder()
-                .url(sparqlUrl)
-                .httpClient(closeableHttpClient)
-                .build();
-    }
-
-    @Bean(destroyMethod = "close")
-    public CloseableHttpClient buildHttpClient() {
-        return HttpClients.custom()
-                .setDefaultHeaders(List.of(new BasicHeader(Constants.HEADER_MU_AUTH_SUDO, "true")))
-                .build();
-
-    }
 
 }
