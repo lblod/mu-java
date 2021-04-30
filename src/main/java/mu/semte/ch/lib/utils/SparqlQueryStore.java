@@ -10,7 +10,19 @@ import java.util.Map;
 import static org.springframework.ui.freemarker.FreeMarkerTemplateUtils.processTemplateIntoString;
 
 public interface SparqlQueryStore {
-    String getQuery(String queryName);
+    Map<String, String> asMap();
+
+    default String getQuery(String queryName) {
+        return asMap().get(queryName);
+    }
+
+    default long size(){
+        return asMap().size();
+    }
+
+    default boolean isPresent(String queryName){
+        return asMap().containsKey(queryName);
+    }
 
     @SneakyThrows
     default String getQueryWithParameters(String queryName, Map<String, Object> parameters) {
