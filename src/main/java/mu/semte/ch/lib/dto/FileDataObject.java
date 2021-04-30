@@ -1,4 +1,4 @@
-package mu.semte.ch.api.kalliope.lib.dto;
+package mu.semte.ch.lib.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
