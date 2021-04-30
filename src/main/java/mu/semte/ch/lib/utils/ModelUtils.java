@@ -18,9 +18,10 @@ import java.time.format.DateTimeFormatter;
 import java.time.ZoneId;
 import java.util.UUID;
 
+import static mu.semte.ch.lib.Constants.DEFAULT_WELL_KNOWN_PREFIX;
+
 
 public interface ModelUtils {
-    String DEFAULT_WELL_KNOWN_PREFIX = "http://data.lblod.info/.well-known/genid";
 
     static Model toModel(String value, String lang) {
         if (StringUtils.isEmpty(value)) throw new RuntimeException("model cannot be empty");

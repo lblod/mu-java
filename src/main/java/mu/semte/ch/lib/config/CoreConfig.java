@@ -34,7 +34,7 @@ import static org.apache.commons.text.CaseUtils.toCamelCase;
 @Slf4j
 public class CoreConfig {
 
-    @Value("classpath:sparql/*.sparql")
+    @Value("classpath*:sparql/*.sparql")
     private Resource[] queries;
 
     @Value("${sparql.endpoint}")
@@ -55,7 +55,7 @@ public class CoreConfig {
                 })
                 .peek(e -> log.info("query {} added to the store", e.getKey()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        return queriesMap::get;
+        return () -> queriesMap;
     }
 
     @Bean
