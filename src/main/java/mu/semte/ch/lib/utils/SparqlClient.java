@@ -18,6 +18,7 @@ import org.apache.jena.riot.RDFLanguages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
@@ -27,6 +28,7 @@ import java.util.stream.Stream;
 
 import static java.util.Optional.*;
 import static mu.semte.ch.lib.Constants.*;
+import static mu.semte.ch.lib.utils.RequestHelper.getCurrentHttpRequest;
 
 @Service
 @Slf4j
@@ -37,9 +39,6 @@ public class SparqlClient {
 
     @Value("${sparql.authSudo:true}")
     private boolean isAuthSudo;
-
-    @Autowired(required = false)
-    private HttpServletRequest request;
 
     public void insertModel(String graphUri, Model model) {
         var triples = ModelUtils.toString(model, RDFLanguages.NTRIPLES);
@@ -96,8 +95,8 @@ public class SparqlClient {
     }
 
     public CloseableHttpClient buildHttpClient() {
-        Optional<BasicHeader> musSessionIdHeader = ofNullable(request).map(r -> r.getHeader(HEADER_MU_SESSION_ID)).map(h -> new BasicHeader(HEADER_MU_SESSION_ID, h));
-        Optional<BasicHeader> musCallIdHeader = ofNullable(request).map(r -> r.getHeader(HEADER_MU_CALL_ID)).map(h -> new BasicHeader(HEADER_MU_CALL_ID, h));
+        Optional<BasicHeader> musSessionIdHeader = getCurrentHttpRequest().map(r -> r.getHeader(HEADER_MU_SESSION_ID)).map(h -> new BasicHeader(HEADER_MU_SESSION_ID, h));
+        Optional<BasicHeader> musCallIdHeader = getCurrentHttpRequest().map(r -> r.getHeader(HEADER_MU_CALL_ID)).map(h -> new BasicHeader(HEADER_MU_CALL_ID, h));
         Optional<BasicHeader> muAuthSudo = isAuthSudo ? of(new BasicHeader(HEADER_MU_AUTH_SUDO, "true")) : empty();
         return HttpClients.custom()
                 .setDefaultHeaders(Stream.of(musSessionIdHeader, musCallIdHeader, muAuthSudo)
@@ -107,4 +106,6 @@ public class SparqlClient {
                 .build();
 
     }
+
+
 }
