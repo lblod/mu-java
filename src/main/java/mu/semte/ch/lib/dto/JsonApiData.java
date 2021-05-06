@@ -12,7 +12,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class JsonApiData {
-    private String type;
-    private String id;
-    private Map<String, String> attributes;
+  private String type;
+  private String id;
+  private Map<String, String> attributes;
 }

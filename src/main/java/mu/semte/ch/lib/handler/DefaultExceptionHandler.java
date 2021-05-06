@@ -13,12 +13,12 @@ import java.util.Map;
 @Slf4j
 public class DefaultExceptionHandler {
 
-    public DefaultExceptionHandler() {
-    }
+  public DefaultExceptionHandler() {
+  }
 
-    @ExceptionHandler({RuntimeException.class})
-    public ResponseEntity<Map.Entry<String, String>> runtimeException(WebRequest webRequest, Exception exception) {
-        log.error("an error occurred ", exception);
-        return ResponseEntity.badRequest().body(Map.entry("stackTrace", ExceptionUtils.getStackTrace(exception)));
-    }
+  @ExceptionHandler({RuntimeException.class})
+  public ResponseEntity<Map.Entry<String, String>> runtimeException(WebRequest webRequest, Exception exception) {
+    log.error("an error occurred ", exception);
+    return ResponseEntity.badRequest().body(Map.entry("stackTrace", ExceptionUtils.getStackTrace(exception)));
+  }
 }

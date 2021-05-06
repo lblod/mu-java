@@ -1,7 +1,7 @@
 package mu.semte.ch.lib.utils;
 
+import com.google.common.base.Strings;
 import lombok.SneakyThrows;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.datatypes.BaseDatatype;
@@ -17,182 +17,189 @@ import org.apache.jena.riot.RiotException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
-
-import com.google.common.base.Strings;
 
 import static mu.semte.ch.lib.Constants.DEFAULT_WELL_KNOWN_PREFIX;
 
 
 public interface ModelUtils {
-    Logger log = LoggerFactory.getLogger(ModelUtils.class);
+  Logger log = LoggerFactory.getLogger(ModelUtils.class);
 
-    static Model toModel(String value, String lang) {
-        if (StringUtils.isEmpty(value)) throw new RuntimeException("model cannot be empty");
-        return toModel(IOUtils.toInputStream(value, StandardCharsets.UTF_8), lang);
-    }
+  static Model toModel(String value, String lang) {
+    if (StringUtils.isEmpty(value)) throw new RuntimeException("model cannot be empty");
+    return toModel(IOUtils.toInputStream(value, StandardCharsets.UTF_8), lang);
+  }
 
-    static String uuid() {
-        return StringUtils.substring(UUID.randomUUID().toString(), 0, 32);
-    }
+  static String uuid() {
+    return StringUtils.substring(UUID.randomUUID().toString(), 0, 32);
+  }
 
-    static String formattedDate(LocalDateTime ldt) {
-        return DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(
+  static String formattedDate(LocalDateTime ldt) {
+    return DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(
             ldt.atZone(ZoneId.systemDefault())
-        );
-    }
+    );
+  }
 
-    static boolean equals(Model firstModel, Model secondModel) {
-        return firstModel.isIsomorphicWith(secondModel);
-    }
+  static boolean equals(Model firstModel, Model secondModel) {
+    return firstModel.isIsomorphicWith(secondModel);
+  }
 
-    static Model difference(Model firstModel, Model secondModel) {
-        return firstModel.difference(secondModel);
-    }
+  static Model difference(Model firstModel, Model secondModel) {
+    return firstModel.difference(secondModel);
+  }
 
-    static Model intersection(Model firstModel, Model secondModel) {
-        return firstModel.intersection(secondModel);
-    }
+  static Model intersection(Model firstModel, Model secondModel) {
+    return firstModel.intersection(secondModel);
+  }
 
-    static Model toModel(InputStream is, String lang) {
-        try (var stream = is) {
-            Model graph = ModelFactory.createDefaultModel();
-            graph.read(stream, "", lang);
-            return graph;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+  static Model toModel(InputStream is, String lang) {
+    try (var stream = is) {
+      Model graph = ModelFactory.createDefaultModel();
+      graph.read(stream, "", lang);
+      return graph;
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  static Model toModel(InputStream is, Lang lang) {
+    return toModel(is, lang.getName());
+  }
+
+  static Lang filenameToLang(String filename) {
+    return RDFLanguages.filenameToLang(filename);
+  }
+
+  static Lang filenameToLang(String filename, Lang fallback) {
+    return RDFLanguages.filenameToLang(filename, fallback);
+  }
+
+  static String getContentType(String lang) {
+    return getContentType(getRdfLanguage(lang));
+  }
+
+  static String getContentType(Lang lang) {
+    return lang.getContentType().getContentTypeStr();
+  }
+
+  static String getExtension(String lang) {
+    return getExtension(getRdfLanguage(lang));
+  }
+
+  static String getExtension(Lang lang) {
+    return lang.getFileExtensions().stream().findFirst().orElse("txt");
+  }
+
+  static Lang getRdfLanguage(String lang) {
+    return RDFLanguages.nameToLang(lang);
+  }
+
+  static String toString(Model model, Lang lang) {
+    StringWriter writer = new StringWriter();
+    model.write(writer, lang.getName());
+    return writer.toString();
+  }
+
+  static byte[] toBytes(Model model, Lang lang) {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    model.write(bos, lang.getName());
+    return bos.toByteArray();
+  }
+
+  static Model replaceAnonNodes(Model model, String nodePrefix) {
+    Model m = ModelFactory.createDefaultModel();
+    model.listStatements().toList()
+         .stream()
+         .map(statement -> {
+           var subject = statement.getSubject();
+           var predicate = statement.getPredicate();
+           var object = statement.getObject();
+           if (subject.isAnon()) {
+             subject = ResourceFactory.createResource(blankNodeToIriString(subject.asNode(), nodePrefix));
+           }
+           if (predicate.isAnon()) {
+             predicate = ResourceFactory.createProperty(blankNodeToIriString(predicate.asNode(), nodePrefix));
+           }
+           if (object.isResource() && object.isAnon()) {
+             object = ResourceFactory.createProperty(blankNodeToIriString(object.asNode(), nodePrefix));
+           }
+           return ResourceFactory.createStatement(subject, predicate, object);
+         })
+         .forEach(m::add);
+    return m;
+  }
+
+  static Model replaceAnonNodes(Model model) {
+    return replaceAnonNodes(model, DEFAULT_WELL_KNOWN_PREFIX);
+  }
+
+  static String blankNodeToIriString(Node node, String nodePrefix) {
+    if (node.isBlank()) {
+      String label = node.getBlankNodeLabel();
+      return "%s/%s".formatted(nodePrefix, label);
+    }
+    if (node.isURI())
+      return node.getURI();
+    throw new RiotException("Not a blank node or URI");
+  }
+
+  static Property nodeToProperty(mu.semte.ch.lib.dto.Node node) {
+    if (node.getType().equals("uri")) {
+      return ResourceFactory.createProperty(node.getValue());
+    }
+    else {
+      log.error("Unknown type '{}' for node", node.getType());
+      return null;
+    }
+  }
+
+  static RDFNode nodeToResource(mu.semte.ch.lib.dto.Node node) {
+    RDFNode resource = null;
+    String type = node.getType();
+
+    switch (type) {
+      case "uri":
+        resource = ResourceFactory.createResource(node.getValue());
+        break;
+      case "literal":
+        if (!Strings.isNullOrEmpty(node.getLanguage())) {
+          resource = ResourceFactory.createLangLiteral(node.getValue(), node.getLanguage());
         }
-    }
-
-    static Model toModel(InputStream is, Lang lang) {
-        return toModel(is, lang.getName());
-    }
-
-    static Lang filenameToLang(String filename) {
-        return RDFLanguages.filenameToLang(filename);
-    }
-
-    static Lang filenameToLang(String filename, Lang fallback) {
-        return RDFLanguages.filenameToLang(filename, fallback);
-    }
-
-    static String getContentType(String lang) {
-        return getContentType(getRdfLanguage(lang));
-    }
-
-    static String getContentType(Lang lang) {
-        return lang.getContentType().getContentTypeStr();
-    }
-
-    static String getExtension(String lang) {
-        return getExtension(getRdfLanguage(lang));
-    }
-
-    static String getExtension(Lang lang) {
-        return lang.getFileExtensions().stream().findFirst().orElse("txt");
-    }
-
-    static Lang getRdfLanguage(String lang) {
-        return RDFLanguages.nameToLang(lang);
-    }
-
-    static String toString(Model model, Lang lang) {
-        StringWriter writer = new StringWriter();
-        model.write(writer, lang.getName());
-        return writer.toString();
-    }
-
-    static byte[] toBytes(Model model, Lang lang) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        model.write(bos, lang.getName());
-        return bos.toByteArray();
-    }
-
-    static Model replaceAnonNodes(Model model, String nodePrefix) {
-        Model m = ModelFactory.createDefaultModel();
-        model.listStatements().toList()
-                .stream()
-                .map(statement -> {
-                    var subject = statement.getSubject();
-                    var predicate = statement.getPredicate();
-                    var object = statement.getObject();
-                    if (subject.isAnon()) {
-                        subject = ResourceFactory.createResource(blankNodeToIriString(subject.asNode(), nodePrefix));
-                    }
-                    if (predicate.isAnon()) {
-                        predicate = ResourceFactory.createProperty(blankNodeToIriString(predicate.asNode(), nodePrefix));
-                    }
-                    if (object.isResource() && object.isAnon()) {
-                        object = ResourceFactory.createProperty(blankNodeToIriString(object.asNode(), nodePrefix));
-                    }
-                    return ResourceFactory.createStatement(subject, predicate, object);
-                })
-                .forEach(m::add);
-        return m;
-    }
-
-    static Model replaceAnonNodes(Model model) {
-        return replaceAnonNodes(model, DEFAULT_WELL_KNOWN_PREFIX);
-    }
-
-    static String blankNodeToIriString(Node node, String nodePrefix) {
-        if (node.isBlank()) {
-            String label = node.getBlankNodeLabel();
-            return "%s/%s".formatted(nodePrefix, label);
+        else if (!Strings.isNullOrEmpty(node.getDatatype())) {
+          resource = ResourceFactory.createTypedLiteral(node.getValue(), new BaseDatatype(node.getDatatype()));
         }
-        if (node.isURI())
-            return node.getURI();
-        throw new RiotException("Not a blank node or URI");
-    }
-
-    static Property nodeToProperty(mu.semte.ch.lib.dto.Node node) {
-        if(node.getType().equals("uri")) {
-          return ResourceFactory.createProperty(node.getValue());
-        } else {
-          log.error("Unknown type '{}' for node", node.getType());
-          return null;
+        else {
+          resource = ResourceFactory.createStringLiteral(node.getValue());
         }
-      }
-  
-    static RDFNode nodeToResource(mu.semte.ch.lib.dto.Node node) {
-        RDFNode resource = null;
-        String type = node.getType();
-  
-        switch(type) {
-          case "uri":
-            resource = ResourceFactory.createResource(node.getValue());
-            break;
-          case "literal":
-            if(!Strings.isNullOrEmpty(node.getLanguage())) {
-              resource = ResourceFactory.createLangLiteral(node.getValue(), node.getLanguage());
-            } else if(!Strings.isNullOrEmpty(node.getDatatype())) {
-              resource = ResourceFactory.createTypedLiteral(node.getValue(), new BaseDatatype(node.getDatatype()));
-            } else {
-              resource = ResourceFactory.createStringLiteral(node.getValue());
-            }
-            break;
-          case "bnode":
-            resource = ResourceFactory.createResource();
-            break;
-          default:
-            log.error("Unknown type '{}' for node", node.getType());
-        }
-        return resource;
-      } 
-
-    @SneakyThrows
-    static File toFile(Model content, Lang rdfLang, String path) {
-        var file = new File(path);
-        content.write(new FileWriter(file), rdfLang.getName());
-        return file;
+        break;
+      case "bnode":
+        resource = ResourceFactory.createResource();
+        break;
+      default:
+        log.error("Unknown type '{}' for node", node.getType());
     }
+    return resource;
+  }
 
-    static Model merge(Model modelA, Model modelB) {
-        return ModelFactory.createUnion(modelA, modelB);
-    }
+  @SneakyThrows
+  static File toFile(Model content, Lang rdfLang, String path) {
+    var file = new File(path);
+    content.write(new FileWriter(file), rdfLang.getName());
+    return file;
+  }
+
+  static Model merge(Model modelA, Model modelB) {
+    return ModelFactory.createUnion(modelA, modelB);
+  }
 }
