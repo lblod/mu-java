@@ -1,15 +1,21 @@
 package mu.semte.ch.lib.utils;
 
 import lombok.SneakyThrows;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.jena.datatypes.BaseDatatype;
 import org.apache.jena.graph.Node;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -18,10 +24,13 @@ import java.time.format.DateTimeFormatter;
 import java.time.ZoneId;
 import java.util.UUID;
 
+import com.google.common.base.Strings;
+
 import static mu.semte.ch.lib.Constants.DEFAULT_WELL_KNOWN_PREFIX;
 
 
 public interface ModelUtils {
+    Logger log = LoggerFactory.getLogger(ModelUtils.class);
 
     static Model toModel(String value, String lang) {
         if (StringUtils.isEmpty(value)) throw new RuntimeException("model cannot be empty");
@@ -140,6 +149,41 @@ public interface ModelUtils {
             return node.getURI();
         throw new RiotException("Not a blank node or URI");
     }
+
+    static Property nodeToProperty(mu.semte.ch.lib.dto.Node node) {
+        if(node.getType().equals("uri")) {
+          return ResourceFactory.createProperty(node.getValue());
+        } else {
+          log.error("Unknown type '{}' for node", node.getType());
+          return null;
+        }
+      }
+  
+    static RDFNode nodeToResource(mu.semte.ch.lib.dto.Node node) {
+        RDFNode resource = null;
+        String type = node.getType();
+  
+        switch(type) {
+          case "uri":
+            resource = ResourceFactory.createResource(node.getValue());
+            break;
+          case "literal":
+            if(!Strings.isNullOrEmpty(node.getLanguage())) {
+              resource = ResourceFactory.createLangLiteral(node.getValue(), node.getLanguage());
+            } else if(!Strings.isNullOrEmpty(node.getDatatype())) {
+              resource = ResourceFactory.createTypedLiteral(node.getValue(), new BaseDatatype(node.getDatatype()));
+            } else {
+              resource = ResourceFactory.createStringLiteral(node.getValue());
+            }
+            break;
+          case "bnode":
+            resource = ResourceFactory.createResource();
+            break;
+          default:
+            log.error("Unknown type '{}' for node", node.getType());
+        }
+        return resource;
+      } 
 
     @SneakyThrows
     static File toFile(Model content, Lang rdfLang, String path) {
