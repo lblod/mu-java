@@ -6,18 +6,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(classes = DummySpringContext.class)
 class CoreConfigTest {
 
-    @Autowired
-    private SparqlQueryStore queryStore;
+  @Autowired
+  private SparqlQueryStore queryStore;
 
-    @Test
-    void sparqlQueryLoader() {
-        assertEquals(1, queryStore.size());
-        assertTrue(queryStore.isPresent("testQuery"));
-        assertEquals("select ?s ?p ?o where {?s ?p ?o}", queryStore.getQuery("testQuery"));
-    }
+  @Test
+  void sparqlQueryLoader() {
+    assertEquals(1, queryStore.size());
+    assertTrue(queryStore.isPresent("testQuery"));
+    assertEquals("select ?s ?p ?o where {?s ?p ?o}", queryStore.getQuery("testQuery"));
+  }
 }

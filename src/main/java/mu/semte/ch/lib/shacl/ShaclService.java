@@ -14,7 +14,6 @@ import org.apache.jena.shacl.Shapes;
 import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.shacl.engine.ShaclPaths;
 import org.apache.jena.vocabulary.RDF;
-import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -105,6 +104,7 @@ public class ShaclService {
   public static ValidationReport fromModel(Model report) {
     return ValidationReport.fromModel(report);
   }
+
   public static ValidationReport fromGraph(Graph report) {
     return ValidationReport.fromGraph(report);
   }

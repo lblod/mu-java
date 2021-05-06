@@ -10,5 +10,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class JsonApiResponse {
-    private JsonApiData data;
+  private JsonApiData data;
 }

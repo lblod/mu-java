@@ -1,15 +1,10 @@
 package mu.semte.ch.lib.config;
 
 import lombok.extern.slf4j.Slf4j;
-import mu.semte.ch.lib.Constants;
 import mu.semte.ch.lib.handler.DefaultExceptionHandler;
 import mu.semte.ch.lib.utils.SparqlClient;
 import mu.semte.ch.lib.utils.SparqlQueryStore;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicHeader;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +16,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
