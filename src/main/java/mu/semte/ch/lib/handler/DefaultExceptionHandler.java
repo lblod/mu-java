@@ -19,6 +19,6 @@ public class DefaultExceptionHandler {
   @ExceptionHandler({RuntimeException.class})
   public ResponseEntity<Map.Entry<String, String>> runtimeException(WebRequest webRequest, Exception exception) {
     log.error("an error occurred ", exception);
-    return ResponseEntity.badRequest().body(Map.entry("stackTrace", ExceptionUtils.getStackTrace(exception)));
+    return ResponseEntity.badRequest().body(Map.entry("message", exception.getMessage()));
   }
 }
