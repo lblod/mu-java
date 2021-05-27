@@ -6,12 +6,14 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jena.datatypes.BaseDatatype;
 import org.apache.jena.graph.Node;
+import org.apache.jena.query.Dataset;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.riot.RiotException;
 import org.slf4j.Logger;
@@ -108,6 +110,12 @@ public interface ModelUtils {
   static String toString(Model model, Lang lang) {
     StringWriter writer = new StringWriter();
     model.write(writer, lang.getName());
+    return writer.toString();
+  }
+
+  static String toString(Dataset dataset, Lang lang) {
+    StringWriter writer = new StringWriter();
+    RDFDataMgr.write(writer, dataset, lang);
     return writer.toString();
   }
 
