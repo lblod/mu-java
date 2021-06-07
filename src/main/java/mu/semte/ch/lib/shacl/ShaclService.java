@@ -81,6 +81,7 @@ public class ShaclService {
     // filter the classes not defined as target shapes
     List<String> classesNotDefinedAsTargetShapes = dataGraph
             .find(null, RDF.type.asNode(), null)
+            .filterDrop(triple -> triple.getObject() == null || triple.getSubject() == null || !triple.getSubject().isURI() || !triple.getObject().isURI())
             .filterDrop(triple -> targetClasses.contains(triple.getObject().getURI()))
             .mapWith(triple -> triple.getSubject().getURI()).toList();
 

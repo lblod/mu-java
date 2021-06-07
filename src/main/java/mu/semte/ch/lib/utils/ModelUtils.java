@@ -11,6 +11,7 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
@@ -209,5 +210,21 @@ public interface ModelUtils {
 
   static Model merge(Model modelA, Model modelB) {
     return ModelFactory.createUnion(modelA, modelB);
+  }
+
+  /**
+   * Extract all the triples linked to a subject from a model to a new model.
+   * This method is very handy if you are just interested by a specific part of a graph
+   * @param subject
+   * @param model
+   * @param newModel
+   */
+  static void extractFromModel(Resource subject, Model model, Model newModel){
+    Model m = model.listStatements(subject, null, (RDFNode) null).toModel();
+    newModel.add(m);
+    m.listStatements().toList().stream()
+     .filter(statement -> statement.getObject().isResource())
+     .map(statement -> statement.getObject().asResource())
+     .forEach(s-> extractFromModel(s, model, newModel));
   }
 }
