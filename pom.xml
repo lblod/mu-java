@@ -9,7 +9,7 @@
     </parent>
     <groupId>mu.semte.ch</groupId>
     <artifactId>mu-java</artifactId>
-    <version>1.0.12-SNAPSHOT</version>
+    <version>1.0.12</version>
     <name>mu-java</name>
     <licenses>
         <license>
@@ -39,7 +39,7 @@
         <connection>
             scm:git:git@github.com:lblod/mu-java.git
         </connection>
-        <tag>1.0.3</tag>
+        <tag>1.0.12</tag>
     </scm>
     <dependencies>
         <dependency>
