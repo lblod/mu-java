@@ -5,9 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import mu.semte.ch.lib.utils.ModelUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.jena.graph.Graph;
+import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.shacl.ShaclValidator;
 import org.apache.jena.shacl.Shapes;
@@ -70,13 +72,22 @@ public class ShaclService {
   }
 
   public static Graph filter(Graph dataGraph, Shapes shapes, ValidationReport report) {
+    var graphModel = ModelFactory.createModelForGraph(dataGraph);
     List<String> targetClasses = shapes
             .getTargetShapes()
             .stream()
             .flatMap(s -> s.getTargets().stream().map(t -> t.getObject().getURI()))
             .collect(Collectors.toList());
 
-    report.getEntries().forEach(r -> dataGraph.remove(r.focusNode(), ShaclPaths.pathNode(r.resultPath()), null));
+    report.getEntries().forEach(r -> {
+      Node subject = r.focusNode();
+      Node predicate = ShaclPaths.pathNode(r.resultPath());
+      if(subject !=null && subject.isURI()){
+        var model = ModelUtils.extractFromModel(ResourceFactory.createResource(subject.getURI()), graphModel);
+        graphModel.remove(model);
+      }
+      graphModel.getGraph().remove(subject, predicate, null);
+    });
 
     // filter the classes not defined as target shapes
     List<String> classesNotDefinedAsTargetShapes = dataGraph

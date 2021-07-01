@@ -227,4 +227,10 @@ public interface ModelUtils {
      .map(statement -> statement.getObject().asResource())
      .forEach(s-> extractFromModel(s, model, newModel));
   }
+
+  static Model extractFromModel(Resource subject, Model model){
+    var newModel = ModelFactory.createDefaultModel();
+    extractFromModel(subject, model, newModel);
+    return newModel;
+  }
 }
