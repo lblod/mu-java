@@ -27,6 +27,15 @@ public interface SparqlQueryStore {
   @SneakyThrows
   default String getQueryWithParameters(String queryName, Map<String, Object> parameters) {
     String query = getQuery(queryName);
+    return computeQueryWithParameters(query, parameters);
+  }
+
+  static String computeQuery(String query, Object... parameters) {
+    return query.formatted(parameters);
+  }
+
+  @SneakyThrows
+  static String computeQueryWithParameters(String query, Map<String, Object> parameters) {
     Template template = new Template("name", new StringReader(query),
                                      new Configuration(Configuration.VERSION_2_3_30));
     return processTemplateIntoString(template, parameters);

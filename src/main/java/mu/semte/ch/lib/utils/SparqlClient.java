@@ -2,6 +2,7 @@ package mu.semte.ch.lib.utils;
 
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
@@ -15,9 +16,13 @@ import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdfconnection.RDFConnection;
 import org.apache.jena.rdfconnection.RDFConnectionRemote;
 import org.apache.jena.riot.RDFLanguages;
+import org.apache.jena.vocabulary.RDF;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -31,6 +36,8 @@ import static mu.semte.ch.lib.utils.RequestHelper.getCurrentHttpRequest;
 @Service
 @Slf4j
 public class SparqlClient {
+
+    private static final String QUERY_FETCH_SUBJECT_URI = "SELECT ?s ?p ?o where {BIND(<${subject}> as ?s) ?s ?p ?o}";
 
     @Value("${sparql.endpoint}")
     private String sparqlUrl;
@@ -89,8 +96,38 @@ public class SparqlClient {
     }
 
     public void dropGraph(String graphUri) {
-        executeUpdateQuery("clear graph <" + graphUri + ">");
+        executeUpdateQuery("clear graph <%s>".formatted(graphUri));
     }
+
+
+  private Model fetchSubject(String uri, List<String> uriProcessed) {
+    if (StringUtils.isEmpty(uri) || uriProcessed.contains(uri)) {
+      return ModelFactory.createDefaultModel();
+    }
+    String query = SparqlQueryStore.computeQueryWithParameters(QUERY_FETCH_SUBJECT_URI, Map.of("subject", uri));
+    Model modelFromUri = this.executeSelectQuery(query);
+    uriProcessed.add(uri);
+    Model model = modelFromUri.listStatements()
+                              .filterDrop(stmt -> stmt.getPredicate().equals(RDF.type) || !stmt.getObject().isURIResource())
+                              .toList()
+                              .stream()
+                              .sequential()
+                              .map(stmt -> stmt.getObject().asResource().getURI())
+                              .peek(iri -> log.debug("uri {}", iri))
+                              .map(iri -> this.fetchSubject(iri, uriProcessed))
+                              .reduce(Model::add)
+                              .orElseGet(ModelFactory::createDefaultModel);
+    return ModelFactory.createUnion(modelFromUri, model);
+  }
+
+  /**
+   * fetch all the triples linked to a subject uri
+   * @param subjectUri the subject uri
+   * @return
+   */
+  public Model fetchTriplesLinkedToSubject(String subjectUri) {
+    return fetchSubject(subjectUri, new ArrayList<>());
+  }
 
     public CloseableHttpClient buildHttpClient() {
         Optional<BasicHeader> musSessionIdHeader = getCurrentHttpRequest().map(r -> r.getHeader(HEADER_MU_SESSION_ID)).map(h -> new BasicHeader(HEADER_MU_SESSION_ID, h));
