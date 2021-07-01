@@ -13,6 +13,7 @@ import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.rdf.model.Statement;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFLanguages;
@@ -30,7 +31,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static mu.semte.ch.lib.Constants.DEFAULT_WELL_KNOWN_PREFIX;
 
@@ -212,6 +216,16 @@ public interface ModelUtils {
     return ModelFactory.createUnion(modelA, modelB);
   }
 
+  private static void extractFromModel(Resource subject, Model model, Model newModel, List<String> statementsProcessed){
+    Model m = model.listStatements(subject, null, (RDFNode) null).toModel();
+    newModel.add(m);
+    m.listStatements().toList().stream()
+     .filter(statement -> statement.getObject().isResource())
+     .map(statement -> statement.getObject().asResource())
+     .filter(resource -> !statementsProcessed.contains(resource.getURI()))
+     .forEach(s-> extractFromModel(s, model, newModel, Stream.concat(statementsProcessed.stream(), Stream.of(s.getURI())).collect(Collectors.toList())));
+  }
+
   /**
    * Extract all the triples linked to a subject from a model to a new model.
    * This method is very handy if you are just interested by a specific part of a graph
@@ -220,17 +234,12 @@ public interface ModelUtils {
    * @param newModel
    */
   static void extractFromModel(Resource subject, Model model, Model newModel){
-    Model m = model.listStatements(subject, null, (RDFNode) null).toModel();
-    newModel.add(m);
-    m.listStatements().toList().stream()
-     .filter(statement -> statement.getObject().isResource())
-     .map(statement -> statement.getObject().asResource())
-     .forEach(s-> extractFromModel(s, model, newModel));
+    extractFromModel(subject,model, newModel, List.of());
   }
 
   static Model extractFromModel(Resource subject, Model model){
     var newModel = ModelFactory.createDefaultModel();
-    extractFromModel(subject, model, newModel);
+    extractFromModel(subject, model, newModel, List.of());
     return newModel;
   }
 }
