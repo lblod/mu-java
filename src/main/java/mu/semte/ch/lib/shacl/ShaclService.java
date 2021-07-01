@@ -98,7 +98,7 @@ public class ShaclService {
 
     classesNotDefinedAsTargetShapes.forEach(sub -> dataGraph.remove(NodeFactory.createURI(sub), null, null));
 
-    return dataGraph;
+    return graphModel.getGraph();
   }
 
   public static ValidationReport validate(Graph dataGraph, Shapes shapes) {
