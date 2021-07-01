@@ -27,9 +27,11 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ShaclService {
   private final Shapes applicationProfile;
+  private final boolean strictModeFiltering;
 
-  public ShaclService(Shapes applicationProfile) {
+  public ShaclService(Shapes applicationProfile, boolean strictModeFiltering) {
     this.applicationProfile = applicationProfile;
+    this.strictModeFiltering = strictModeFiltering;
   }
 
   public ValidationReport validate(Graph dataGraph) {
@@ -66,12 +68,12 @@ public class ShaclService {
   }
 
   @SneakyThrows
-  public static Graph filter(MultipartFile dataModel, MultipartFile shapesFile) {
+  public Graph filter(MultipartFile dataModel, MultipartFile shapesFile) {
     return filter(dataModel.getInputStream(), ModelUtils.filenameToLang(dataModel.getOriginalFilename()),
                   shapesFile.getInputStream(), ModelUtils.filenameToLang(shapesFile.getOriginalFilename()));
   }
 
-  public static Graph filter(Graph dataGraph, Shapes shapes, ValidationReport report) {
+  public Graph filter(Graph dataGraph, Shapes shapes, ValidationReport report) {
     var graphModel = ModelFactory.createModelForGraph(dataGraph);
     List<String> targetClasses = shapes
             .getTargetShapes()
@@ -82,7 +84,7 @@ public class ShaclService {
     report.getEntries().forEach(r -> {
       Node subject = r.focusNode();
       Node predicate = ShaclPaths.pathNode(r.resultPath());
-      if(subject !=null && subject.isURI()){
+      if(strictModeFiltering && subject !=null && subject.isURI()){
         var model = ModelUtils.extractFromModel(ResourceFactory.createResource(subject.getURI()), graphModel);
         graphModel.remove(model);
       }
@@ -105,7 +107,7 @@ public class ShaclService {
     return ShaclValidator.get().validate(shapes, dataGraph);
   }
 
-  public static Graph filter(InputStream dataModel, Lang modelLang, InputStream shapesModel, Lang shapesLang) {
+  public Graph filter(InputStream dataModel, Lang modelLang, InputStream shapesModel, Lang shapesLang) {
     Graph dataGraph = ModelUtils.toModel(dataModel, modelLang).getGraph();
     Graph shapesGraph = ModelUtils.toModel(shapesModel, shapesLang).getGraph();
     Shapes shapes = Shapes.parse(shapesGraph);
