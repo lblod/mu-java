@@ -9,6 +9,7 @@ import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.shacl.ShaclValidator;
@@ -85,10 +86,11 @@ public class ShaclService {
       Node subject = r.focusNode();
       Node predicate = ShaclPaths.pathNode(r.resultPath());
       if(strictModeFiltering && subject !=null && subject.isURI()){
-        var model = ModelUtils.extractFromModel(ResourceFactory.createResource(subject.getURI()), graphModel);
-        graphModel.remove(model);
+        graphModel.remove(ResourceFactory.createResource(subject.getURI()), null, null);
+      }else{
+        graphModel.getGraph().remove(subject, predicate, null);
+
       }
-      graphModel.getGraph().remove(subject, predicate, null);
     });
 
     // filter the classes not defined as target shapes
