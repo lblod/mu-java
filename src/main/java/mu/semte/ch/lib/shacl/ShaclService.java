@@ -86,7 +86,7 @@ public class ShaclService {
       Node subject = r.focusNode();
       Node predicate = ShaclPaths.pathNode(r.resultPath());
       if(strictModeFiltering && subject !=null && subject.isURI()){
-        graphModel.remove(ResourceFactory.createResource(subject.getURI()), null, null);
+        graphModel.removeAll(ResourceFactory.createResource(subject.getURI()), null, null);
       }else{
         graphModel.getGraph().remove(subject, predicate, null);
 
