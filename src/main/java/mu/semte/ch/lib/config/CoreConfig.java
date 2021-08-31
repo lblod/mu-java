@@ -33,7 +33,7 @@ import static org.apache.commons.text.CaseUtils.toCamelCase;
 @Slf4j
 public class CoreConfig implements AsyncConfigurer {
 
-    @Value("${sparql.queryStore.path:classpath*:sparql/*.sparql}")
+    @Value("${sparql.queryStore.path:classpath*:sparql}/*.sparql")
     private Resource[] queries;
 
 
