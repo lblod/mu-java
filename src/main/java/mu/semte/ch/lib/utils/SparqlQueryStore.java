@@ -8,6 +8,7 @@ import lombok.SneakyThrows;
 import org.springframework.ui.Model;
 
 import java.io.StringReader;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.springframework.ui.freemarker.FreeMarkerTemplateUtils.processTemplateIntoString;
@@ -41,7 +42,8 @@ public interface SparqlQueryStore {
   static String computeQueryWithParameters(String query, Map<String, Object> parameters) {
     Configuration cfg = new Configuration(Configuration.VERSION_2_3_31);
     Template template = new Template("name", new StringReader(query), cfg);
-    parameters.put("_uuid", (TemplateMethodModelEx) (list) -> ModelUtils.uuid());
-    return processTemplateIntoString(template, parameters);
+    Map<String, Object> params = new HashMap<>(parameters);
+    params.put("_uuid", (TemplateMethodModelEx) (list) -> ModelUtils.uuid());
+    return processTemplateIntoString(template, params);
   }
 }
