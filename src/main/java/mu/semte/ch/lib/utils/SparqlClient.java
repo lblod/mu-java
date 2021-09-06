@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -70,6 +71,29 @@ public class SparqlClient {
              QueryExecution queryExecution = QueryExecutionFactory.sparqlService(sparqlUrl, query, httpClient)) {
             return resultHandler.apply(queryExecution.execSelect());
         }
+    }
+    public List<Map<String,String>> executeSelectQueryAsListMap(String query) {
+      var list = executeSelectQuery(query, resultSet -> {
+        List<Map<String, String>> mapList = new ArrayList<>();
+        List<String> resultVars = resultSet.getResultVars();
+        resultSet.forEachRemaining(querySolution -> {
+          Map<String, String> collect = resultVars.stream().map(v -> {
+                                                    var node = querySolution.get(v);
+                                                    if (node == null) {
+                                                      return null;
+                                                    }
+                                                    if (node.isResource()) {
+                                                      return Map.entry(v, node.asResource().getURI());
+                                                    }
+                                                    return Map.entry(v, node.asLiteral().getString());
+                                                  })
+                                                  .filter(Objects::nonNull)
+                                                  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+          mapList.add(collect);
+        });
+        return mapList;
+      });
+      return list;
     }
 
     public Model executeSelectQuery(String query) {
