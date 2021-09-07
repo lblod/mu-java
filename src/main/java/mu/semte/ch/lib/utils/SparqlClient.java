@@ -16,6 +16,7 @@ import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.RDFNode;
 import org.apache.jena.rdfconnection.RDFConnection;
 import org.apache.jena.rdfconnection.RDFConnectionRemote;
+import org.apache.jena.riot.Lang;
 import org.apache.jena.riot.RDFLanguages;
 import org.apache.jena.vocabulary.RDF;
 import org.springframework.beans.factory.annotation.Value;
@@ -95,10 +96,10 @@ public class SparqlClient {
     return list;
   }
 
-  public String executeSelectAsJsonOutput(String query) {
+  public String executeSelectAsOutput(String query, Lang formatter) {
     return executeSelectQuery(query, resultSet -> {
       ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-      ResultSetFormatter.outputAsJSON(outputStream, resultSet);
+      ResultSetFormatter.output(outputStream, resultSet, formatter);
       return outputStream.toString();
 
     });
