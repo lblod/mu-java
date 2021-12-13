@@ -35,6 +35,7 @@
         <commons-text.version>1.9</commons-text.version>
         <poi.version>5.0.0</poi.version>
         <jsonapi-converter.version>0.11</jsonapi-converter.version>
+        <lombok.version>1.18.22</lombok.version>
         <log4j2.version>2.15.0</log4j2.version>
     </properties>
     <scm>
