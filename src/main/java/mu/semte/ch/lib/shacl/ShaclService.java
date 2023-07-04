@@ -24,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 @Slf4j
 public class ShaclService {
   private final Shapes applicationProfile;
@@ -71,23 +70,23 @@ public class ShaclService {
   @SneakyThrows
   public Graph filter(MultipartFile dataModel, MultipartFile shapesFile) {
     return filter(dataModel.getInputStream(), ModelUtils.filenameToLang(dataModel.getOriginalFilename()),
-                  shapesFile.getInputStream(), ModelUtils.filenameToLang(shapesFile.getOriginalFilename()));
+        shapesFile.getInputStream(), ModelUtils.filenameToLang(shapesFile.getOriginalFilename()));
   }
 
   public Graph filter(Graph dataGraph, Shapes shapes, ValidationReport report) {
     var graphModel = ModelFactory.createModelForGraph(dataGraph);
-    List<String> targetClasses = shapes
-            .getTargetShapes()
-            .stream()
-            .flatMap(s -> s.getTargets().stream().map(t -> t.getObject().getURI()))
-            .collect(Collectors.toList());
+
+    List<String> targetClasses = shapes.getTargets().targetClasses.stream().map(t -> t.getURI())
+        .collect(Collectors.toList());
+
+    log.info("target classes: {}", targetClasses.stream().collect(Collectors.joining(",\n", "[\n", "\n]")));
 
     report.getEntries().forEach(r -> {
       Node subject = r.focusNode();
       Node predicate = ShaclPaths.pathNode(r.resultPath());
-      if(strictModeFiltering && subject !=null && subject.isURI()){
+      if (strictModeFiltering && subject != null && subject.isURI()) {
         graphModel.removeAll(ResourceFactory.createResource(subject.getURI()), null, null);
-      }else{
+      } else {
         graphModel.getGraph().remove(subject, predicate, null);
 
       }
@@ -95,10 +94,11 @@ public class ShaclService {
 
     // filter the classes not defined as target shapes
     List<String> classesNotDefinedAsTargetShapes = dataGraph
-            .find(null, RDF.type.asNode(), null)
-            .filterDrop(triple -> triple.getObject() == null || triple.getSubject() == null || !triple.getSubject().isURI() || !triple.getObject().isURI())
-            .filterDrop(triple -> targetClasses.contains(triple.getObject().getURI()))
-            .mapWith(triple -> triple.getSubject().getURI()).toList();
+        .find(null, RDF.type.asNode(), null)
+        .filterDrop(triple -> triple.getObject() == null || triple.getSubject() == null || !triple.getSubject().isURI()
+            || !triple.getObject().isURI())
+        .filterDrop(triple -> targetClasses.contains(triple.getObject().getURI()))
+        .mapWith(triple -> triple.getSubject().getURI()).toList();
 
     classesNotDefinedAsTargetShapes.forEach(sub -> dataGraph.remove(NodeFactory.createURI(sub), null, null));
 
