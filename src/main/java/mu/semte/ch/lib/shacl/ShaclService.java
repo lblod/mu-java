@@ -9,13 +9,13 @@ import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.riot.Lang;
 import org.apache.jena.shacl.ShaclValidator;
 import org.apache.jena.shacl.Shapes;
 import org.apache.jena.shacl.ValidationReport;
 import org.apache.jena.shacl.engine.ShaclPaths;
+import org.apache.jena.shacl.engine.TargetType;
 import org.apache.jena.vocabulary.RDF;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -73,13 +73,18 @@ public class ShaclService {
         shapesFile.getInputStream(), ModelUtils.filenameToLang(shapesFile.getOriginalFilename()));
   }
 
+  public static List<String> getTargetClasses(Shapes shapes) {
+    return shapes.getTargetShapes().stream()
+        .map(t -> t.getTargets().stream().filter(s -> s.getTargetType().equals(TargetType.targetClass)).findFirst())
+        .filter(java.util.Optional::isPresent)
+        .map(j -> j.map(jk -> jk.getObject().getURI()).get())
+        .collect(Collectors.toList());
+  }
+
   public Graph filter(Graph dataGraph, Shapes shapes, ValidationReport report) {
     var graphModel = ModelFactory.createModelForGraph(dataGraph);
-
-    List<String> targetClasses = shapes.getTargets().targetClasses.stream().map(t -> t.getURI())
-        .collect(Collectors.toList());
-
-    log.info("target classes: {}", targetClasses.stream().collect(Collectors.joining(",\n", "[\n", "\n]")));
+    List<String> targetClasses = getTargetClasses(shapes);
+    log.debug("target classes {}", targetClasses);
 
     report.getEntries().forEach(r -> {
       Node subject = r.focusNode();
