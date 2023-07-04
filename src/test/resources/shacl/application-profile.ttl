@@ -850,5 +850,5 @@
     sh:closed false .
 <https://data.vlaanderen.be/shacl/besluit-type#d7060f97-c417-474c-abc6-ef006cb61f41>
     a sh:NodeShape ;
-    sh:targetClass <https://data.vlaanderen.be/doc/concept/BesluitType/d7060f97-c417-474c-abc6-ef006cb61f41> ;
+    sh:targetClass <https://data.vlaanderen.be/id/concept/BesluitType/d7060f97-c417-474c-abc6-ef006cb61f41> ;
     sh:closed false .

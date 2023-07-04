@@ -93,7 +93,6 @@ public class ShaclService {
         graphModel.removeAll(ResourceFactory.createResource(subject.getURI()), null, null);
       } else {
         graphModel.getGraph().remove(subject, predicate, null);
-
       }
     });
 
@@ -103,8 +102,11 @@ public class ShaclService {
         .filterDrop(triple -> triple.getObject() == null || triple.getSubject() == null || !triple.getSubject().isURI()
             || !triple.getObject().isURI())
         .filterDrop(triple -> targetClasses.contains(triple.getObject().getURI()))
-        .mapWith(triple -> triple.getSubject().getURI()).toList();
+        .toList().stream()
+        .peek(triple -> log.debug("triple class that will be filtered: {}", triple.getObject().getURI()))
+        .map(triple -> triple.getSubject().getURI()).collect(Collectors.toList());
 
+    log.debug("subject with class not defined: {}", classesNotDefinedAsTargetShapes);
     classesNotDefinedAsTargetShapes.forEach(sub -> dataGraph.remove(NodeFactory.createURI(sub), null, null));
 
     return graphModel.getGraph();
