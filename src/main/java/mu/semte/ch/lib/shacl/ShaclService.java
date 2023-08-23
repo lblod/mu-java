@@ -7,6 +7,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
+import org.apache.jena.graph.Triple;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.ResourceFactory;
@@ -21,7 +22,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -97,14 +101,29 @@ public class ShaclService {
     });
 
     // filter the classes not defined as target shapes
-    List<String> classesNotDefinedAsTargetShapes = dataGraph
+    Set<String> subjectsDefinedAsTargetClass = new HashSet<>();
+    List<Triple> tripleNotDefinedAsTargetClass = new ArrayList<>();
+
+    for (Triple triple : dataGraph
         .find(null, RDF.type.asNode(), null)
         .filterDrop(triple -> triple.getObject() == null || triple.getSubject() == null || !triple.getSubject().isURI()
             || !triple.getObject().isURI())
-        .filterDrop(triple -> targetClasses.contains(triple.getObject().getURI()))
-        .toList().stream()
-        .peek(triple -> log.debug("triple class that will be filtered: {}", triple.getObject().getURI()))
-        .map(triple -> triple.getSubject().getURI()).collect(Collectors.toList());
+        .toList()) {
+
+      if (targetClasses.contains(triple.getObject().getURI())) {
+        subjectsDefinedAsTargetClass.add(triple.getSubject().getURI());
+      } else {
+
+        tripleNotDefinedAsTargetClass.add(triple);
+      }
+
+    }
+    List<String> classesNotDefinedAsTargetShapes = tripleNotDefinedAsTargetClass.stream()
+        .filter(triple -> !subjectsDefinedAsTargetClass.contains(triple.getSubject().getURI()))
+        .peek(triple -> log.debug("subject <{}> with class <{}> will be filtered", triple.getSubject().getURI(),
+            triple.getObject().getURI()))
+        .map(triple -> triple.getSubject().getURI())
+        .collect(Collectors.toList());
 
     log.debug("subject with class not defined: {}", classesNotDefinedAsTargetShapes);
     classesNotDefinedAsTargetShapes.forEach(sub -> dataGraph.remove(NodeFactory.createURI(sub), null, null));
