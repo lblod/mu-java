@@ -38,7 +38,6 @@
     <poi.version>5.0.0</poi.version>
     <jsonapi-converter.version>0.11</jsonapi-converter.version>
     <lombok.version>1.18.30</lombok.version>
-    <log4j2.version>2.16.0</log4j2.version>
   </properties>
   <scm>
     <connection>
