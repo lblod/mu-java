@@ -44,10 +44,15 @@ public class SparqlClient {
   @Value("${sparql.authSudo:true}")
   private boolean isAuthSudo;
 
-  public void insertModel(String graphUri, Model model) {
+  public void insertModel(String graphUri, Model model, String sparqlEndpoint,
+      boolean mayRetry) {
     var triples = ModelUtils.toString(model, RDFLanguages.NTRIPLES);
     String updateQuery = String.format("INSERT DATA { GRAPH <%s> { %s } }", graphUri, triples);
-    executeUpdateQuery(updateQuery);
+    executeUpdateQuery(updateQuery, sparqlEndpoint, mayRetry);
+  }
+
+  public void insertModel(String graphUri, Model model) {
+    insertModel(graphUri, model, sparqlUrl, false);
   }
 
   @SneakyThrows
