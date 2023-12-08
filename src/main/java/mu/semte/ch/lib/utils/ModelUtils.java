@@ -1,26 +1,8 @@
 package mu.semte.ch.lib.utils;
 
-import com.google.common.base.Strings;
-import lombok.SneakyThrows;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.jena.datatypes.BaseDatatype;
-import org.apache.jena.graph.Node;
-import org.apache.jena.query.Dataset;
-import org.apache.jena.rdf.model.Model;
-import org.apache.jena.rdf.model.ModelFactory;
-import org.apache.jena.rdf.model.Property;
-import org.apache.jena.rdf.model.RDFNode;
-import org.apache.jena.rdf.model.Resource;
-import org.apache.jena.rdf.model.ResourceFactory;
-import org.apache.jena.rdf.model.Statement;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFLanguages;
-import org.apache.jena.riot.RiotException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static mu.semte.ch.lib.Constants.DEFAULT_WELL_KNOWN_PREFIX;
 
+import com.google.common.base.Strings;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -35,15 +17,31 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static mu.semte.ch.lib.Constants.DEFAULT_WELL_KNOWN_PREFIX;
-
+import lombok.SneakyThrows;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.jena.datatypes.BaseDatatype;
+import org.apache.jena.graph.Node;
+import org.apache.jena.query.Dataset;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.RDFNode;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.ResourceFactory;
+import org.apache.jena.riot.Lang;
+import org.apache.jena.riot.RDFDataMgr;
+import org.apache.jena.riot.RDFLanguages;
+import org.apache.jena.riot.RiotException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public interface ModelUtils {
   Logger log = LoggerFactory.getLogger(ModelUtils.class);
 
   static Model toModel(String value, String lang) {
-    if (StringUtils.isEmpty(value)) throw new RuntimeException("model cannot be empty");
+    if (StringUtils.isEmpty(value))
+      throw new RuntimeException("model cannot be empty");
     return toModel(IOUtils.toInputStream(value, StandardCharsets.UTF_8), lang);
   }
 
@@ -53,8 +51,7 @@ public interface ModelUtils {
 
   static String formattedDate(LocalDateTime ldt) {
     return DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(
-            ldt.atZone(ZoneId.systemDefault())
-    );
+        ldt.atZone(ZoneId.systemDefault()));
   }
 
   static boolean equals(Model firstModel, Model secondModel) {
@@ -74,8 +71,7 @@ public interface ModelUtils {
       Model graph = ModelFactory.createDefaultModel();
       graph.read(stream, "", lang);
       return graph;
-    }
-    catch (IOException e) {
+    } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
@@ -132,24 +128,28 @@ public interface ModelUtils {
 
   static Model replaceAnonNodes(Model model, String nodePrefix) {
     Model m = ModelFactory.createDefaultModel();
-    model.listStatements().toList()
-         .stream()
-         .map(statement -> {
-           var subject = statement.getSubject();
-           var predicate = statement.getPredicate();
-           var object = statement.getObject();
-           if (subject.isAnon()) {
-             subject = ResourceFactory.createResource(blankNodeToIriString(subject.asNode(), nodePrefix));
-           }
-           if (predicate.isAnon()) {
-             predicate = ResourceFactory.createProperty(blankNodeToIriString(predicate.asNode(), nodePrefix));
-           }
-           if (object.isResource() && object.isAnon()) {
-             object = ResourceFactory.createProperty(blankNodeToIriString(object.asNode(), nodePrefix));
-           }
-           return ResourceFactory.createStatement(subject, predicate, object);
-         })
-         .forEach(m::add);
+    model.listStatements()
+        .toList()
+        .stream()
+        .map(statement -> {
+          var subject = statement.getSubject();
+          var predicate = statement.getPredicate();
+          var object = statement.getObject();
+          if (subject.isAnon()) {
+            subject = ResourceFactory.createResource(
+                blankNodeToIriString(subject.asNode(), nodePrefix));
+          }
+          if (predicate.isAnon()) {
+            predicate = ResourceFactory.createProperty(
+                blankNodeToIriString(predicate.asNode(), nodePrefix));
+          }
+          if (object.isResource() && object.isAnon()) {
+            object = ResourceFactory.createProperty(
+                blankNodeToIriString(object.asNode(), nodePrefix));
+          }
+          return ResourceFactory.createStatement(subject, predicate, object);
+        })
+        .forEach(m::add);
     return m;
   }
 
@@ -170,8 +170,7 @@ public interface ModelUtils {
   static Property nodeToProperty(mu.semte.ch.lib.dto.Node node) {
     if (node.getType().equals("uri")) {
       return ResourceFactory.createProperty(node.getValue());
-    }
-    else {
+    } else {
       log.error("Unknown type '{}' for node", node.getType());
       return null;
     }
@@ -187,12 +186,12 @@ public interface ModelUtils {
         break;
       case "literal":
         if (!Strings.isNullOrEmpty(node.getLanguage())) {
-          resource = ResourceFactory.createLangLiteral(node.getValue(), node.getLanguage());
-        }
-        else if (!Strings.isNullOrEmpty(node.getDatatype())) {
-          resource = ResourceFactory.createTypedLiteral(node.getValue(), new BaseDatatype(node.getDatatype()));
-        }
-        else {
+          resource = ResourceFactory.createLangLiteral(node.getValue(),
+              node.getLanguage());
+        } else if (!Strings.isNullOrEmpty(node.getDatatype())) {
+          resource = ResourceFactory.createTypedLiteral(
+              node.getValue(), new BaseDatatype(node.getDatatype()));
+        } else {
           resource = ResourceFactory.createStringLiteral(node.getValue());
         }
         break;
@@ -216,28 +215,38 @@ public interface ModelUtils {
     return ModelFactory.createUnion(modelA, modelB);
   }
 
-  private static void extractFromModel(Resource subject, Model model, Model newModel, List<String> statementsProcessed){
+  private static void extractFromModel(Resource subject, Model model,
+      Model newModel,
+      List<String> statementsProcessed) {
     Model m = model.listStatements(subject, null, (RDFNode) null).toModel();
     newModel.add(m);
-    m.listStatements().toList().stream()
-     .filter(statement -> statement.getObject().isResource())
-     .map(statement -> statement.getObject().asResource())
-     .filter(resource -> !statementsProcessed.contains(resource.getURI()))
-     .forEach(s-> extractFromModel(s, model, newModel, Stream.concat(statementsProcessed.stream(), Stream.of(s.getURI())).collect(Collectors.toList())));
+    m.listStatements()
+        .toList()
+        .stream()
+        .filter(statement -> statement.getObject().isResource())
+        .map(statement -> statement.getObject().asResource())
+        .filter(resource -> !statementsProcessed.contains(resource.getURI()))
+        .forEach(s -> extractFromModel(s, model, newModel,
+            Stream
+                .concat(statementsProcessed.stream(),
+                    Stream.of(s.getURI()))
+                .collect(Collectors.toList())));
   }
 
   /**
    * Extract all the triples linked to a subject from a model to a new model.
-   * This method is very handy if you are just interested by a specific part of a graph
+   * This method is very handy if you are just interested by a specific part of
+   * a graph
+   * 
    * @param subject
    * @param model
    * @param newModel
    */
-  static void extractFromModel(Resource subject, Model model, Model newModel){
-    extractFromModel(subject,model, newModel, List.of());
+  static void extractFromModel(Resource subject, Model model, Model newModel) {
+    extractFromModel(subject, model, newModel, List.of());
   }
 
-  static Model extractFromModel(Resource subject, Model model){
+  static Model extractFromModel(Resource subject, Model model) {
     var newModel = ModelFactory.createDefaultModel();
     extractFromModel(subject, model, newModel, List.of());
     return newModel;

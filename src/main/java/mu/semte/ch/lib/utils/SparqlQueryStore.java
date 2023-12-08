@@ -1,17 +1,14 @@
 package mu.semte.ch.lib.utils;
 
-import freemarker.ext.beans.BeansWrapperBuilder;
+import static org.springframework.ui.freemarker.FreeMarkerTemplateUtils.processTemplateIntoString;
+
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateMethodModelEx;
-import lombok.SneakyThrows;
-import org.springframework.ui.Model;
-
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.springframework.ui.freemarker.FreeMarkerTemplateUtils.processTemplateIntoString;
+import lombok.SneakyThrows;
 
 public interface SparqlQueryStore {
   Map<String, String> asMap();
@@ -29,7 +26,8 @@ public interface SparqlQueryStore {
   }
 
   @SneakyThrows
-  default String getQueryWithParameters(String queryName, Map<String, Object> parameters) {
+  default String getQueryWithParameters(String queryName,
+      Map<String, Object> parameters) {
     String query = getQuery(queryName);
     return computeQueryWithParameters(query, parameters);
   }
@@ -39,7 +37,8 @@ public interface SparqlQueryStore {
   }
 
   @SneakyThrows
-  static String computeQueryWithParameters(String query, Map<String, Object> parameters) {
+  static String computeQueryWithParameters(String query,
+      Map<String, Object> parameters) {
     Configuration cfg = new Configuration(Configuration.VERSION_2_3_31);
     Template template = new Template("name", new StringReader(query), cfg);
     Map<String, Object> params = new HashMap<>(parameters);
