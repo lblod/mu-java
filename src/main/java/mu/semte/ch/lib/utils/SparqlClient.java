@@ -43,6 +43,8 @@ public class SparqlClient {
 
   @Value("${sparql.authSudo:true}")
   private boolean isAuthSudo;
+  @Value("${sparql.maxRetry:10}")
+  private int maxRetry;
 
   public void insertModel(String graphUri, Model model, String sparqlEndpoint,
       boolean mayRetry) {
@@ -66,6 +68,7 @@ public class SparqlClient {
     log.debug(updateQuery);
 
     var sleepMillis = 1000;
+    var retryCount = 0;
 
     while (true) {
       try (var httpClient = buildHttpClient();
@@ -73,10 +76,11 @@ public class SparqlClient {
               .destination(sparqlEndpoint)
               .httpClient(httpClient)
               .build()) {
+        retryCount += 1;
         conn.update(updateQuery);
         return;
       } catch (Throwable e) {
-        if (mayRetry) {
+        if (mayRetry && retryCount != maxRetry) {
           log.warn("error '{}', will try in {} millis..", e, sleepMillis);
           sleepMillis *= 2;
           Thread.sleep(sleepMillis);
@@ -94,13 +98,15 @@ public class SparqlClient {
     log.debug(query);
     var sleepMillis = 1000;
 
+    var retryCount = 0;
     while (true) {
       try (var httpClient = buildHttpClient();
           QueryExecution queryExecution = QueryExecutionFactory.sparqlService(
               sparqlEndpoint, query, httpClient)) {
+        retryCount += 1;
         return resultHandler.apply(queryExecution.execSelect());
       } catch (Throwable e) {
-        if (mayRetry) {
+        if (mayRetry && retryCount != maxRetry) {
           log.warn("error '{}', will try in {} millis..", e, sleepMillis);
           sleepMillis *= 2;
           Thread.sleep(sleepMillis);
@@ -186,16 +192,16 @@ public class SparqlClient {
       boolean mayRetry) {
     log.debug(askQuery);
     var sleepMillis = 1000;
-
+    var retryCount = 0;
     while (true) {
       try (var httpClient = buildHttpClient();
           QueryExecution queryExecution = QueryExecutionFactory.sparqlService(
               sparqlEndpoint, askQuery, httpClient)) {
-
+        retryCount += 1;
         return queryExecution.execAsk();
 
       } catch (Throwable e) {
-        if (mayRetry) {
+        if (mayRetry && retryCount != maxRetry) {
           log.warn("error '{}', will try in {} millis..", e, sleepMillis);
           sleepMillis *= 2;
           Thread.sleep(sleepMillis);
