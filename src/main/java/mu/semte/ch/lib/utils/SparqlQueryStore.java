@@ -42,7 +42,7 @@ public interface SparqlQueryStore {
     Configuration cfg = new Configuration(Configuration.VERSION_2_3_31);
     Template template = new Template("name", new StringReader(query), cfg);
     Map<String, Object> params = new HashMap<>(parameters);
-    params.put("_uuid", (TemplateMethodModelEx) (list) -> ModelUtils.uuid());
+    params.put("_uuid", (TemplateMethodModelEx) (_) -> ModelUtils.uuid());
     return processTemplateIntoString(template, params);
   }
 }
