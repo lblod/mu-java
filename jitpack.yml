@@ -1,5 +1,5 @@
 jdk:
-  - openjdk21
+  - openjdk-24
 before_install:
-  - sdk install java 21.0.1-open
-  - sdk use java 21.0.1-open
+  - sdk install java 24-tem
+  - sdk default java 24-tem
