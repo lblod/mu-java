@@ -4,6 +4,7 @@ import static mu.semte.ch.lib.Constants.*;
 import static mu.semte.ch.lib.utils.RequestHelper.getCurrentHttpRequest;
 
 import java.io.ByteArrayOutputStream;
+import java.net.http.HttpClient;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -63,9 +64,10 @@ public class SparqlClient {
     var retryCount = 0;
 
     while (true) {
-      var qExec = UpdateExecutionHTTP.create().updateString(updateQuery).httpHeaders(buildHttpHeaders())
+      var qExec = UpdateExecutionHTTP.create().updateString(updateQuery)
+          .httpHeaders(buildHttpHeaders())
+          .httpClient(HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build())
           .endpoint(sparqlEndpoint)
-
           .build();
       try {
         retryCount += 1;
@@ -94,6 +96,7 @@ public class SparqlClient {
     while (true) {
 
       try (var qExec = QueryExecutionHTTP.newBuilder().httpHeaders(buildHttpHeaders())
+          .httpClient(HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build())
           .endpoint(sparqlEndpoint)
           .query(query).build()) {
         retryCount += 1;
@@ -189,6 +192,7 @@ public class SparqlClient {
     while (true) {
 
       try (var qExec = QueryExecutionHTTP.create().httpHeaders(buildHttpHeaders())
+          .httpClient(HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build())
           .endpoint(sparqlEndpoint)
           .query(askQuery)
           .build()) {
